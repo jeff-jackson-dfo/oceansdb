@@ -6,7 +6,7 @@
 
 import os
 import sys
-import pkg_resources
+from importlib import resources
 import json
 
 from netCDF4 import Dataset
@@ -72,18 +72,22 @@ def dbsource(dbname, var, resolution=None, tscale=None):
     """Return which file(s) to use according to dbname, var, etc
     """
     db_cfg = {}
-    cfg_dir = 'datasource'
-    cfg_files = pkg_resources.resource_listdir('oceansdb', cfg_dir)
-    cfg_files = [f for f in cfg_files if f[-5:] == '.json']
-    for src_cfg in cfg_files:
-        text = pkg_resources.resource_string(
-                'oceansdb', os.path.join(cfg_dir, src_cfg))
-        text = text.decode('UTF-8', 'replace')
-        cfg = json.loads(text)
-        for c in cfg:
-            assert c not in db_cfg, "Trying to overwrite %s"
-            db_cfg[c] = cfg[c]
+    cfg_dir = "datasource"
 
+    # List all JSON files in the 'datasource' directory of the 'oceansdb' package
+    cfg_files = [
+        f.name
+        for f in resources.files("oceansdb").joinpath(cfg_dir).iterdir()
+        if f.suffix == ".json"
+    ]
+    for src_cfg in cfg_files:
+        # Read the JSON file from the 'oceansdb' package
+        text = resources.read_text("oceansdb", os.path.join(cfg_dir, src_cfg), encoding="utf-8")
+        cfg = json.loads(text)
+        
+        for c in cfg:
+            assert c not in db_cfg, f"Trying to overwrite {c}"
+            db_cfg[c] = cfg[c]
     dbpath = oceansdb_dir()
     datafiles = []
     cfg = db_cfg[dbname]
