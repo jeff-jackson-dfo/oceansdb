@@ -1,17 +1,12 @@
 # -*- coding: utf-8 -*-
-
-"""
-
-"""
-
 import os
 import sys
 from importlib import resources
 import json
 
 from netCDF4 import Dataset
-
 from supportdata import download_file
+
 
 if sys.version_info >= (3, 0):
     from urllib.parse import urlparse
@@ -99,6 +94,7 @@ def dbsource(dbname, var, resolution=None, tscale=None):
         tscale = cfg['vars'][var][resolution]["default_tscale"]
 
     for c in cfg['vars'][var][resolution][tscale]:
+        print(f'dbpath = {dbpath}')
         download_file(outputdir=dbpath, **c)
 
         if 'filename' in c:
