@@ -3,13 +3,14 @@
 """ Module to handle World Ocean Atlas (WOA) climatology
 """
 
-from os.path import expanduser
+from os.path import expanduser  # noqa: I001
 import re
 from datetime import datetime
 
 import numpy as np
 from numpy import ma
 import netCDF4
+from pydap.client import open_url
 from scipy.interpolate import interp1d
 # RectBivariateSpline
 from scipy.interpolate import griddata
@@ -22,9 +23,9 @@ from .common import cropIndices
 def woa_profile(var, d, lat, lon, depth, cfg):
     # Must improve here. This try make sense if fail because there isn't an
     #   etopo file, but if fail for another reason, like there is no lat,
-    #   it will loose time trying from_dap.
+    #   it will lose time trying from_dap.
     try:
-        woa = woa_profile_from_file(var, d, lat, lon, depth, cfg)
+        woa = woa_track_from_file(var, d, lat, lon, depth)
     except:
         try:
             woa = woa_profile_from_dap(var, d, lat, lon, depth, cfg)
@@ -56,17 +57,18 @@ def woa_profile_from_dap(var, d, lat, lon, depth, cfg):
     url = cfg['url']
 
     doy = int(d.strftime('%j'))
+    # TODO: replace open_url call with urllib.request.urlopen call
     dataset = open_url(url)
 
-    dn = (np.abs(doy-dataset['time'][:])).argmin()
+    dn = (np.abs(doy-dataset['time'][:])).argmin() # type: ignore
     xn = (np.abs(lon-dataset['lon'][:])).argmin()
     yn = (np.abs(lat-dataset['lat'][:])).argmin()
 
     if re.match(r'temperature\d?$', var):
         mn = ma.masked_values(dataset.t_mn.t_mn[dn, :, yn, xn].reshape(
-            dataset['depth'].shape[0]), dataset.t_mn.attributes['_FillValue'])
+            dataset['depth'].shape[0]), dataset.t_mn.attributes['_FillValue']) # pyright: ignore[reportCallIssue]
         sd = ma.masked_values(dataset.t_sd.t_sd[dn, :, yn, xn].reshape(
-            dataset['depth'].shape[0]), dataset.t_sd.attributes['_FillValue'])
+            dataset['depth'].shape[0]), dataset.t_sd.attributes['_FillValue']) # pyright: ignore[reportCallIssue]
         # se = ma.masked_values(dataset.t_se.t_se[dn, :, yn, xn].reshape(
         #    dataset['depth'].shape[0]), dataset.t_se.attributes['_FillValue'])
         # Use this in the future. A minimum # of samples
@@ -74,20 +76,20 @@ def woa_profile_from_dap(var, d, lat, lon, depth, cfg):
         #    dataset['depth'].shape[0]), dataset.t_dd.attributes['_FillValue'])
     elif re.match(r'salinity\d?$', var):
         mn = ma.masked_values(dataset.s_mn.s_mn[dn, :, yn, xn].reshape(
-            dataset['depth'].shape[0]), dataset.s_mn.attributes['_FillValue'])
+            dataset['depth'].shape[0]), dataset.s_mn.attributes['_FillValue']) # pyright: ignore[reportCallIssue]
         sd = ma.masked_values(dataset.s_sd.s_sd[dn, :, yn, xn].reshape(
-            dataset['depth'].shape[0]), dataset.s_sd.attributes['_FillValue'])
+            dataset['depth'].shape[0]), dataset.s_sd.attributes['_FillValue']) # pyright: ignore[reportCallIssue]
         # dd = ma.masked_values(dataset.s_dd.s_dd[dn, :, yn, xn].reshape(
         #    dataset['depth'].shape[0]), dataset.s_dd.attributes['_FillValue'])
     zwoa = ma.array(dataset.depth[:])
 
     ind = (depth <= zwoa.max()) & (depth >= zwoa.min())
     # Mean value profile
-    f = interp1d(zwoa[~ma.getmaskarray(mn)].compressed(), mn.compressed())
+    f = interp1d(zwoa[~ma.getmaskarray(mn)].compressed(), mn.compressed()) # pyright: ignore[reportPossiblyUnboundVariable]
     mn_interp = ma.masked_all(depth.shape)
     mn_interp[ind] = f(depth[ind])
     # The stdev profile
-    f = interp1d(zwoa[~ma.getmaskarray(sd)].compressed(), sd.compressed())
+    f = interp1d(zwoa[~ma.getmaskarray(sd)].compressed(), sd.compressed()) # pyright: ignore[reportPossiblyUnboundVariable]
     sd_interp = ma.masked_all(depth.shape)
     sd_interp[ind] = f(depth[ind])
 
@@ -163,7 +165,7 @@ class WOA_var_nc(object):
             nc.close()
 
     def __getitem__(self, item):
-        return self.data[item]
+        return self.data[item] # type: ignore
 
     def keys(self):
         return self.KEYS
@@ -461,9 +463,9 @@ class WOA_var_nc(object):
 
         return output
 
-    def get_profile(var, doy, depth, lat, lon):
-        print("get_profile is deprecated. You should migrate to extract()")
-        return extract(var=var, doy=doy, depth=depth, lat=lat, lon=lon)
+    # def get_profile(self, var, doy, depth, lat, lon):
+    #     print("get_profile is deprecated. You should migrate to extract()")
+    #     return self.extract(var=var, doy=doy, depth=depth, lat=lat, lon=lon)
 
 
 class WOA(object):
@@ -490,7 +492,7 @@ class WOA(object):
             return self['dissolved_oxygen']
 
         if self.data[item] is None:
-            self.data[item] = WOA_var_nc(source=dbsource(
+            self.data[item] = WOA_var_nc(source=dbsource( # type: ignore
                 self.dbname, item, self.resolution, self.tscale))
         return self.data[item]
 

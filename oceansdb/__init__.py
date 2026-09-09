@@ -6,9 +6,9 @@ __email__ = 'guilherme@castelao.net'
 from importlib import metadata, resources
 
 try:
-    from importlib.metadata import version, PackageNotFoundError
+    from importlib.metadata import version, PackageNotFoundError  # noqa: I001
 except ImportError:  # Python < 3.8
-    from importlib_metadata import version, PackageNotFoundError  # type: ignore
+    from importlib_metadata import version, PackageNotFoundError  # type: ignore  # noqa: I001
 
 try:
     __version__ = version(__name__)
@@ -23,9 +23,9 @@ except PackageNotFoundError:
         ) from exc
 
 
-from oceansdb.woa import WOA
-from oceansdb.etopo import ETOPO
-from oceansdb.cars import CARS
+# from oceansdb.woa import WOA
+# from oceansdb.etopo import ETOPO
+# from oceansdb.cars import CARS
 #from WOA.woa import woa_profile
 #from WOA.woa import woa_profile_from_dap
 #from WOA.woa import woa_track_from_file

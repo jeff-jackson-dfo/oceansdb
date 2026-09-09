@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os
+import os  # noqa: I001
 import sys
 from importlib import resources
 import json
@@ -73,13 +73,13 @@ def dbsource(dbname, var, resolution=None, tscale=None):
     cfg_files = [
         f.name
         for f in resources.files("oceansdb").joinpath(cfg_dir).iterdir()
-        if f.suffix == ".json"
+        if f.name.endswith(".json")
     ]
     for src_cfg in cfg_files:
         # Read the JSON file from the 'oceansdb' package
         text = resources.read_text("oceansdb", os.path.join(cfg_dir, src_cfg), encoding="utf-8")
         cfg = json.loads(text)
-        
+
         for c in cfg:
             assert c not in db_cfg, f"Trying to overwrite {c}"
             db_cfg[c] = cfg[c]

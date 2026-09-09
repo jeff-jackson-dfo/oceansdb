@@ -3,9 +3,10 @@
 """ Module to handle ETOPO bathymetry
 """
 
-import numpy as np
+import numpy as np  # noqa: I001
 from numpy import ma
 import netCDF4
+from pydap.client import open_url
 
 from .utils import dbsource
 from .common import cropIndices
